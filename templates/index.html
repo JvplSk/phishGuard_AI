@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PhishGuard - Explainable phishing URL risk assessment">
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='phishguard_icon.png') }}">
+<title>PhishGuard | URL Security Intelligence</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="ambient ambient-one"></div>
+<div class="ambient ambient-two"></div>
+
+<header>
+  <a class="brand" href="#">
+    <span class="brand-mark">◆</span>
+    <span>PhishGuard</span>
+    <em>SECURITY INTELLIGENCE</em>
+  </a>
+
+  <nav>
+    <a href="#scanner">Scanner</a>
+    <a href="#intelligence">Intelligence</a>
+    <a href="#how">How it works</a>
+    <a href="#about">About</a>
+  </nav>
+</header>
+
+<main>
+<section class="hero">
+  <div class="eyebrow"><span class="pulse"></span> URL THREAT ANALYSIS ENGINE</div>
+  <h1>Detect phishing.<br><span>Browse smarter.</span></h1>
+  <p>Analyze a suspicious URL through multiple security-focused features and get an explainable risk assessment before you trust it.</p>
+  <div class="hero-actions">
+    <a class="primary-btn" href="#scanner">Scan a URL <span>↗</span></a>
+    <a class="ghost-btn" href="#how">Explore the engine</a>
+  </div>
+  <div class="hero-meta">
+    <span>● LOCAL URL ANALYSIS</span>
+    <span>● NO WEBSITE EXECUTION</span>
+    <span>● EXPLAINABLE RESULTS</span>
+  </div>
+</section>
+
+<section id="scanner" class="scanner-panel">
+  <div class="section-tag">01 / SCANNER</div>
+  <div class="scanner-title">
+    <div>
+      <h2>Check a website before you trust it.</h2>
+      <p>Paste a URL below. PhishGuard inspects its structure without opening the target website.</p>
+    </div>
+    <div class="scanner-status"><span></span> ENGINE READY</div>
+  </div>
+
+  <div class="scan-box">
+    <div class="input-wrap">
+      <span>⌁</span>
+      <input id="url" autocomplete="off" spellcheck="false" placeholder="https://example.com">
+    </div>
+    <button class="scan-btn" onclick="scan()">Analyze URL <span>→</span></button>
+  </div>
+
+  <div id="err" class="error"></div>
+
+  <div class="examples">
+    <span>TRY A SAMPLE</span>
+    <button onclick="ex('https://www.wikipedia.org')">Wikipedia</button>
+    <button onclick="ex('http://secure-login-account-verify.example.com/login')">Suspicious URL</button>
+  </div>
+</section>
+
+<section id="result" class="result-panel hidden">
+  <div class="result-top">
+    <div>
+      <div class="section-tag">02 / THREAT ASSESSMENT</div>
+      <div class="classification" id="label">ANALYZING</div>
+      <h2 id="host">Unknown</h2>
+      <p id="summary">Analyzing URL structure...</p>
+    </div>
+    <div class="score-ring" id="scoreRing">
+      <div><strong id="risk">0</strong><small>/100 RISK</small></div>
+    </div>
+  </div>
+
+  <div class="risk-strip">
+    <div>
+      <span>THREAT LEVEL</span>
+      <b id="threat">—</b>
+    </div>
+    <div>
+      <span>CONFIDENCE INDICATOR</span>
+      <b id="conf">0%</b>
+    </div>
+    <div>
+      <span>PROTOCOL</span>
+      <b id="proto">—</b>
+    </div>
+    <div>
+      <span>URL LENGTH</span>
+      <b id="len">—</b>
+    </div>
+  </div>
+
+  <div class="result-grid">
+    <div class="intel-card">
+      <div class="card-heading">
+        <div><span class="mini-number">A</span><h3>URL Intelligence</h3></div>
+        <span id="analysisType">HEURISTIC</span>
+      </div>
+      <div id="features" class="feature-list"></div>
+    </div>
+
+    <div class="intel-card">
+      <div class="card-heading">
+        <div><span class="mini-number">B</span><h3>Why this result?</h3></div>
+      </div>
+      <ul id="reasons" class="reason-list"></ul>
+
+      <div id="positiveBox" class="positive-box hidden">
+        <strong>Positive signals</strong>
+        <ul id="positive"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="model-note">
+    <span>◈</span>
+    <div>
+      <strong id="modelStatus">ML model not connected yet</strong>
+      <p>This version uses an explainable URL-feature risk engine. A trained dataset-backed ML classifier can be connected in the next phase.</p>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <span>⚠</span>
+    <p>A “Likely Legitimate” result is <b>not a guarantee</b> that a website is safe. This prototype evaluates URL structure only and does not verify website ownership, reputation, page content, DNS records, or external threat intelligence.</p>
+  </div>
+</section>
+
+<section id="intelligence" class="architecture">
+  <div class="section-tag">03 / SECURITY PIPELINE</div>
+  <h2>From raw URL to explainable signal.</h2>
+  <p class="section-copy">Every scan passes through a structured analysis pipeline designed to make the decision understandable.</p>
+
+  <div class="pipeline">
+    <article><span>01</span><b>INPUT</b><p>Receive and validate the submitted URL.</p></article>
+    <i>→</i>
+    <article><span>02</span><b>EXTRACT</b><p>Measure URL, hostname and pattern features.</p></article>
+    <i>→</i>
+    <article><span>03</span><b>ASSESS</b><p>Combine multiple indicators into a risk score.</p></article>
+    <i>→</i>
+    <article><span>04</span><b>EXPLAIN</b><p>Show the signals that influenced the result.</p></article>
+  </div>
+</section>
+
+<section id="how" class="how">
+  <div class="section-tag">04 / HOW IT WORKS</div>
+  <h2>Security analysis, without the black box.</h2>
+
+  <div class="steps">
+    <article><span>01</span><h3>Validate</h3><p>The backend safely parses the submitted URL and checks basic validity before analysis.</p></article>
+    <article><span>02</span><h3>Extract</h3><p>PhishGuard measures HTTPS, IP usage, URL length, subdomains, keywords, shorteners and other structural indicators.</p></article>
+    <article><span>03</span><h3>Classify</h3><p>Indicators are combined by an explainable risk engine to produce a threat level and supporting reasons.</p></article>
+  </div>
+</section>
+
+<section id="about" class="about-card">
+  <div class="section-tag">05 / PROJECT</div>
+  <h2>Built as a security engineering prototype.</h2>
+  <p>PhishGuard is a semester project by <b>Krish &amp; Swayam Koul</b>. The architecture is designed so a trained dataset-backed ML classifier can be integrated without rebuilding the frontend.</p>
+  <div class="project-tags">
+    <span>PYTHON</span><span>FLASK</span><span>URL ANALYSIS</span><span>EXPLAINABLE RISK</span><span>ML-READY</span>
+  </div>
+</section>
+</main>
+
+<footer>
+  <b>◆ PhishGuard</b>
+  <span>AI-Based Phishing Website Detection System · Semester Project</span>
+</footer>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
