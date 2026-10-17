@@ -2,9 +2,12 @@ from flask import Flask, render_template, request, jsonify
 from urllib.parse import urlparse
 import ipaddress
 import re
+import joblib
+from pathlib import Path
 
 app = Flask(__name__)
-
+MODEL_PATH = Path(__file__).resolve().parent / "phishing_model.joblib"
+model = joblib.load(MODEL_PATH)
 
 SUSPICIOUS_WORDS = [
     "login", "verify", "update", "secure", "account",
@@ -144,6 +147,7 @@ def analyze(url):
         {"name": "Query parameters", "value": str(query_params),
          "status": "warning" if query_params >= 5 else "good"},
     ]
+    ml_prediction = int(model.predict([raw])[0])
 
     return {
         "label": label,
@@ -159,7 +163,8 @@ def analyze(url):
         "features": feature_rows,
         "keyword_hits": suspicious_word_hits,
         "analysis_type": "Explainable URL heuristic analysis",
-        "model_status": "ML model not connected yet"
+        "model_status": "ML model connected",
+        "ml_prediction": ml_prediction
     }
 
 
