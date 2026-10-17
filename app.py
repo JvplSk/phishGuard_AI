@@ -6,6 +6,7 @@ import joblib
 from pathlib import Path
 
 app = Flask(__name__)
+
 MODEL_PATH = Path(__file__).resolve().parent / "phishing_model.joblib"
 model = joblib.load(MODEL_PATH)
 
@@ -32,29 +33,34 @@ def is_ip_address(host):
 def analyze(url):
     raw = url.strip()
 
-    normalized = raw if re.match(r"^https?://", raw, re.I) else "http://" + raw
+    normalized = (
+        raw if re.match(r"^https?://", raw, re.I)
+        else "http://" + raw
+    )
     parsed = urlparse(normalized)
 
-    host = parsed.hostname or ""
-    host = host.lower()
+    host = (parsed.hostname or "").lower()
     full = normalized.lower()
 
     path = parsed.path or ""
     query = parsed.query or ""
-    fragment = parsed.fragment or ""
 
     labels = [x for x in host.split(".") if x]
     subdomains = max(0, len(labels) - 2)
 
     suspicious_word_hits = [
         word for word in SUSPICIOUS_WORDS
-        if re.search(rf"(?<![a-z]){re.escape(word)}(?![a-z])", full)
+        if re.search(
+            rf"(?<![a-z]){re.escape(word)}(?![a-z])",
+            full
+        )
     ]
 
-    special_chars = len(re.findall(r"[^a-zA-Z0-9:/?&.=_%#-]", raw))
+    special_chars = len(
+        re.findall(r"[^a-zA-Z0-9:/?&.=_%#-]", raw)
+    )
     digit_count = sum(c.isdigit() for c in raw)
     hyphen_count = raw.count("-")
-    dot_count = raw.count(".")
     query_params = len([x for x in query.split("&") if x])
     path_depth = len([x for x in path.split("/") if x])
 
@@ -64,9 +70,12 @@ def analyze(url):
     has_double_slash = "//" in path
     has_ip = is_ip_address(host)
     uses_https = parsed.scheme.lower() == "https"
-    is_shortener = host in SHORTENERS or any(host.endswith("." + s) for s in SHORTENERS)
+    is_shortener = (
+        host in SHORTENERS
+        or any(host.endswith("." + s) for s in SHORTENERS)
+    )
 
-    # Explainable heuristic risk engine.
+    # Explainable heuristic risk score
     score = 0
     reasons = []
     positive_checks = []
@@ -79,14 +88,18 @@ def analyze(url):
         (len(raw) > 100, 10, "The URL is unusually long."),
         (len(raw) > 180, 7, "The URL is extremely long."),
         (subdomains >= 3, 10, "The hostname contains many subdomains."),
-        (subdomains >= 5, 7, "The hostname contains an unusually deep subdomain chain."),
+        (subdomains >= 5, 7, "The hostname has a deep subdomain chain."),
         (hyphen_count >= 3, 7, "The URL contains several hyphens."),
-        (len(suspicious_word_hits) >= 2, 12, "Multiple security-sensitive keywords appear in the URL."),
+        (
+            len(suspicious_word_hits) >= 2,
+            12,
+            "Multiple security-sensitive keywords appear in the URL."
+        ),
         (has_double_slash, 7, "A double-slash pattern appears inside the path."),
         (has_punycode, 15, "Punycode/IDN encoding is present in the hostname."),
-        (has_port, 5, "A non-default explicit port is present."),
-        (special_chars >= 4, 5, "The URL contains several unusual special characters."),
-        (digit_count >= 8, 5, "The URL contains an unusually high number of digits."),
+        (has_port, 5, "An explicit port is present."),
+        (special_chars >= 4, 5, "The URL contains unusual special characters."),
+        (digit_count >= 8, 5, "The URL contains many digits."),
         (query_params >= 5, 4, "The URL contains many query parameters."),
         (path_depth >= 6, 4, "The URL has a deep path structure.")
     ]
@@ -98,7 +111,6 @@ def analyze(url):
 
     score = min(100, score)
 
-    # Small positive signals are kept separate from risk signals.
     if uses_https:
         positive_checks.append("HTTPS is enabled.")
     if not has_ip:
@@ -106,7 +118,7 @@ def analyze(url):
     if len(raw) <= 100:
         positive_checks.append("URL length is within the normal threshold.")
 
-    # AI prediction: PhiUSIIL labels
+    # AI prediction: PhiUSIIL dataset labels
     # 0 = phishing, 1 = legitimate
     ml_prediction = int(model.predict([raw])[0])
 
@@ -122,29 +134,57 @@ def analyze(url):
         threat = "LOW"
 
     if not reasons:
-        reasons = ["No strong suspicious URL-structure indicators were detected."]
+        reasons = [
+            "No strong suspicious URL-structure indicators were detected."
+        ]
 
     feature_rows = [
-        {"name": "HTTPS", "value": "Enabled" if uses_https else "Not enabled",
-         "status": "good" if uses_https else "warning"},
-        {"name": "IP address", "value": "Detected" if has_ip else "Not detected",
-         "status": "warning" if has_ip else "good"},
-        {"name": "Subdomains", "value": str(subdomains),
-         "status": "warning" if subdomains >= 3 else "good"},
-        {"name": "URL length", "value": f"{len(raw)} chars",
-         "status": "warning" if len(raw) > 100 else "good"},
-        {"name": "Hyphens", "value": str(hyphen_count),
-         "status": "warning" if hyphen_count >= 3 else "good"},
-        {"name": "Sensitive keywords", "value": str(len(suspicious_word_hits)),
-         "status": "warning" if len(suspicious_word_hits) >= 2 else "good"},
-        {"name": "Shortener", "value": "Detected" if is_shortener else "Not detected",
-         "status": "warning" if is_shortener else "good"},
-        {"name": "Punycode", "value": "Detected" if has_punycode else "Not detected",
-         "status": "warning" if has_punycode else "good"},
-        {"name": "Query parameters", "value": str(query_params),
-         "status": "warning" if query_params >= 5 else "good"},
+        {
+            "name": "HTTPS",
+            "value": "Enabled" if uses_https else "Not enabled",
+            "status": "good" if uses_https else "warning"
+        },
+        {
+            "name": "IP address",
+            "value": "Detected" if has_ip else "Not detected",
+            "status": "warning" if has_ip else "good"
+        },
+        {
+            "name": "Subdomains",
+            "value": str(subdomains),
+            "status": "warning" if subdomains >= 3 else "good"
+        },
+        {
+            "name": "URL length",
+            "value": f"{len(raw)} chars",
+            "status": "warning" if len(raw) > 100 else "good"
+        },
+        {
+            "name": "Hyphens",
+            "value": str(hyphen_count),
+            "status": "warning" if hyphen_count >= 3 else "good"
+        },
+        {
+            "name": "Sensitive keywords",
+            "value": str(len(suspicious_word_hits)),
+            "status": "warning" if len(suspicious_word_hits) >= 2 else "good"
+        },
+        {
+            "name": "Shortener",
+            "value": "Detected" if is_shortener else "Not detected",
+            "status": "warning" if is_shortener else "good"
+        },
+        {
+            "name": "Punycode",
+            "value": "Detected" if has_punycode else "Not detected",
+            "status": "warning" if has_punycode else "good"
+        },
+        {
+            "name": "Query parameters",
+            "value": str(query_params),
+            "status": "warning" if query_params >= 5 else "good"
+        }
     ]
-    ml_prediction = int(model.predict([raw])[0])
 
     return {
         "label": label,
@@ -159,7 +199,7 @@ def analyze(url):
         "positive_checks": positive_checks,
         "features": feature_rows,
         "keyword_hits": suspicious_word_hits,
-        "analysis_type": "Explainable URL heuristic analysis",
+        "analysis_type": "AI + Explainable URL heuristic analysis",
         "model_status": "ML model connected",
         "ml_prediction": ml_prediction
     }
@@ -179,19 +219,25 @@ def scan():
         return jsonify(error="Please enter a URL."), 400
 
     if len(url) > 2048:
-        return jsonify(error="URL is too long. Maximum length is 2048 characters."), 400
+        return jsonify(
+            error="URL is too long. Maximum length is 2048 characters."
+        ), 400
 
     try:
         parsed = urlparse(
-            url if re.match(r"^https?://", url, re.I) else "http://" + url
+            url if re.match(r"^https?://", url, re.I)
+            else "http://" + url
         )
 
         if not parsed.hostname:
             return jsonify(error="Please enter a valid domain or URL."), 400
 
         return jsonify(analyze(url))
+
     except ValueError:
-        return jsonify(error="The URL contains an invalid port or hostname."), 400
+        return jsonify(
+            error="The URL contains an invalid port or hostname."
+        ), 400
     except Exception:
         return jsonify(error="Unable to analyze this URL."), 400
 
