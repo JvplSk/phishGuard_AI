@@ -106,23 +106,20 @@ def analyze(url):
     if len(raw) <= 100:
         positive_checks.append("URL length is within the normal threshold.")
 
-    if score >= 65:
+    # AI prediction: PhiUSIIL labels
+    # 0 = phishing, 1 = legitimate
+    ml_prediction = int(model.predict([raw])[0])
+
+    probabilities = model.predict_proba([raw])[0]
+    class_index = list(model.classes_).index(ml_prediction)
+    confidence = round(float(probabilities[class_index]) * 100)
+
+    if ml_prediction == 0:
         label = "POTENTIAL PHISHING"
-        threat = "HIGH"
-    elif score >= 35:
-        label = "SUSPICIOUS"
-        threat = "MEDIUM"
+        threat = "HIGH" if score >= 65 else "MEDIUM"
     else:
         label = "LIKELY LEGITIMATE"
         threat = "LOW"
-
-    # This is a heuristic confidence indicator, not a statistical ML probability.
-    if threat == "HIGH":
-        confidence = min(98, 70 + round(score * 0.25))
-    elif threat == "MEDIUM":
-        confidence = min(93, 62 + round(score * 0.35))
-    else:
-        confidence = min(94, 90 - round(score * 0.25))
 
     if not reasons:
         reasons = ["No strong suspicious URL-structure indicators were detected."]
